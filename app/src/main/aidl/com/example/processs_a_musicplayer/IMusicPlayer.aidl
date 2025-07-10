@@ -2,6 +2,7 @@
 package com.example.processs_a_musicplayer;
 
 // Declare any non-default types here with import statements
+import com.example.processs_a_musicplayer.IClientCallback;
 
 interface IMusicPlayer {
     /**
@@ -15,4 +16,7 @@ interface IMusicPlayer {
     void stop();
 
     boolean getPlayerStatus();
+
+    void registerCallback(IClientCallback callback);
+    void unregisterCallback(IClientCallback callback);
 }

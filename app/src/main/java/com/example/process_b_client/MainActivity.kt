@@ -1,5 +1,6 @@
 package com.example.process_b_client
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -13,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.processs_a_musicplayer.IClientCallback
 import com.example.processs_a_musicplayer.IMusicPlayer
 
 class MainActivity : AppCompatActivity() {
@@ -20,23 +22,39 @@ class MainActivity : AppCompatActivity() {
     var startMusicbtn:Button? = null
     var stopMusicbtn:Button? = null
     var statusTextView:TextView? = null
+    var airPlaneMode: TextView? = null
 
     var iMusicPlayer:IMusicPlayer? = null
+
+    var callback = object : IClientCallback.Stub() {
+        @SuppressLint("SetTextI18n")
+        override fun onMessageReceived(msg: String?) {
+            Log.d(TAG, "onMessageReceived: $msg on process B")
+            runOnUiThread {
+                run {
+                    airPlaneMode?.text = "AirPlane mode status: ${if (msg?.contains("true") == true) "ON" else "OFF"}"
+                }
+            }
+        }
+    }
 
     var serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
            iMusicPlayer = IMusicPlayer.Stub.asInterface(service)
+            iMusicPlayer?.registerCallback(callback)
             Log.d(TAG, "onServiceConnected: Connection successful on Process B")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-           iMusicPlayer = null
+            iMusicPlayer?.unregisterCallback(callback)
+            iMusicPlayer = null
             Log.d(TAG, "onServiceDisconnected: Connection failed on Process B")
         }
 
     }
 
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -49,6 +67,7 @@ class MainActivity : AppCompatActivity() {
          startMusicbtn = findViewById<Button>(R.id.startMusicBtn)
          stopMusicbtn = findViewById<Button>(R.id.stopMusicBtn)
          statusTextView = findViewById<TextView>(R.id.statusTextView)
+        airPlaneMode = findViewById<TextView>(R.id.airPlaneModeTxV)
 
 
     }
@@ -82,6 +101,7 @@ class MainActivity : AppCompatActivity() {
             statusTextView?.text = if (iMusicPlayer?.playerStatus == true) "Music player is playing..." else "Music player is stopped"
         }
     }
+
     fun convertImplicitIntentToExplicitIntent(ct: Context, implicitIntent: Intent): Intent? {
         val pm = ct.packageManager
         val resolveInfoList = pm.queryIntentServices(implicitIntent, 0)
